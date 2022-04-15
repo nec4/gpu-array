@@ -233,7 +233,7 @@ class FrontEnd(object):
                 row = gpu_id // self.win_rows
                 col = gpu_id % self.win_rows
 
-                mem_string = "{}{}/{}".format(
+                mem_string = "{}{}/{} MiB".format(
                     FrontEnd.overwatch_labels["memory"],
                     all_gpu_props[gpu_id]["used_mem"],
                     all_gpu_props[gpu_id]["total_mem"],
@@ -241,12 +241,12 @@ class FrontEnd(object):
                 fan_string = "{}{} %".format(
                     FrontEnd.overwatch_labels["fan"], int(all_gpu_props[gpu_id]["fan"])
                 )
-                temp_string = "{}{}/{}".format(
+                temp_string = "{}{}/{} C".format(
                     FrontEnd.overwatch_labels["temperature"],
                     int(all_gpu_props[gpu_id]["temp"]),
                     int(all_gpu_props[gpu_id]["max_temp"]),
                 )
-                power_string = "{}{}/{}".format(
+                power_string = "{}{}/{} W".format(
                     FrontEnd.overwatch_labels["power"],
                     int(all_gpu_props[gpu_id]["used_power"]),
                     int(all_gpu_props[gpu_id]["power_limit"]),
@@ -284,7 +284,11 @@ class FrontEnd(object):
                 window.addstr(
                     1,
                     1,
-                    " {}: {} ".format(gpu_id, all_gpu_props[gpu_id]["name"]),
+                    " {}: {} ({:03}%)".format(
+                        gpu_id,
+                        all_gpu_props[gpu_id]["name"],
+                        all_gpu_props[gpu_id]["utilization"],
+                    ),
                 )
                 window.addstr(
                     2,

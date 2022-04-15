@@ -87,13 +87,20 @@ class GPUQuery(object):
             .data.split(" ")[0]
         )
 
+        gpu_props["utilization"] = int(
+            gpu.getElementsByTagName("utilization")[0]
+            .childNodes[1]
+            .childNodes[0]
+            .data.split(" ")[0]
+        )
+
         process_nodelist = gpu.getElementsByTagName("process_info")
         processes = {}
         for node in process_nodelist:
             pid = int(node.childNodes[5].childNodes[0].data)
             pname = node.childNodes[9].childNodes[0].data.split("/")[-1]
             mem = int(node.childNodes[11].childNodes[0].data.split(" ")[0])
-            completed_process = sp.run(
+            completed_process = subprocess.run(
                 ["ps", "--no-headers", "-p", "{}".format(pid), "-o", "user,comm,etime"],
                 capture_output=True,
                 text=True,
