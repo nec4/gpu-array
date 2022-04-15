@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 import os
 
-NAME = "kbdtest"
+NAME = "overgpu"
 VERSION = "0.0"
 
 
