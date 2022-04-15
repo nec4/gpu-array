@@ -152,11 +152,13 @@ class FrontEnd(object):
 
         if win_size_y <= FrontEnd.card_buffer_y:
             curses.endwin()
-            self.stop()
+            if self.poll_thread != None:
+                self.stop()
             raise RuntimeError("Terminal too small in Y!")
         if win_size_x <= FrontEnd.card_buffer_x:
             curses.endwin()
-            self.stop()
+            if self.poll_thread != None:
+                self.stop()
             raise RuntimeError("Terminal too small in X!")
 
         self.window_array = [
