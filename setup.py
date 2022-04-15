@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 import os
 
-NAME = "overgpu"
+NAME = "gpu_array"
 VERSION = "0.0"
 
 
@@ -37,6 +37,6 @@ setup(
     zip_safe=True,
     cmdclass={"install": InstallScript},
     entry_points={
-        "console_scripts": ["overgpu = overgpu.scripts.__main__:main"],
+        "console_scripts": ["gpu-array = gpu_array.scripts.__main__:main"],
     },
 )
