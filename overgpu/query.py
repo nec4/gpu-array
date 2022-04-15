@@ -1,25 +1,44 @@
-import subprocess as sp
+import subprocess
 from xml.dom.minidom import parseString, Element
-import numpy as np
-from time import sleep
-
 from typing import Dict
 
 
 class GPUQuery(object):
-    """Nvidia-SMI query generator and parser"""
+    """Nvidia-SMI XML query generator and parser"""
 
     def __init__(self):
-        self.text_buffer = ""
         self.xml_out = None
 
     @staticmethod
-    def _nvsmi_call(as_xml=True):
-        completed_process = sp.run(["nvidia-smi", "-q", "-x"], capture_output=True)
-        return completed_process.stdout
+    def _nvsmi_call() -> subprocess.CompletedProcess:
+        """Subprocess call to nvidia-smi specifying XML output
+        of GPU information.
+
+        Returns
+        -------
+        completed_process:
+            CompletedProcess instance containing the XML output of nvidia-smi
+        """
+        completed_process = subprocess.run(
+            ["nvidia-smi", "-q", "-x"], capture_output=True
+        )
+        return completed_process
 
     @staticmethod
     def parse_gpu_props(gpu: Element) -> Dict:
+        """Method for parsing nvidia-smi XML output
+
+        Parameters
+        ----------
+        gpu:
+            An XML minidom Element instance that represents
+            a "GPU" node in the xml minidom tree
+
+        Returns
+        -------
+        gpu_props:
+            dictionary of the gpu properties
+        """
         gpu_props = {}
 
         gpu_props["name"] = (
@@ -92,13 +111,23 @@ class GPUQuery(object):
         return gpu_props
 
     def make_query(self):
-        self.xml_out = parseString(GPUQuery._nvsmi_call())
+        """Method parsing and storing minidom-parsed XML
+        from nvidia-smi"""
+        self.xml_out = parseString(GPUQuery._nvsmi_call().stdout)
 
 
 class Tracker(object):
-    """Object for polling and storing GPU stats"""
+    """Object for polling and storing GPU stats
 
-    def __init__(self, query, polling_rate=1, method="stdout", filename=None):
+    Parameters
+    ----------
+    query:
+        GPUquery instance
+    polling_rate:
+        The rate at which queries about GPU information should be made
+    """
+
+    def __init__(self, query: GPUQuery, polling_rate: int = 1):
         self.query = query
         self.polling_rate = polling_rate
         self.props_buffer = None
@@ -107,7 +136,11 @@ class Tracker(object):
         self.num_gpus = len(self.props_buffer.keys())
 
     def poll(self):
+        """Method that makes a query, parses the xml, and stores the
+        parsed dictionary in a volatile buffer attribute, Tracker.props_buffer.
+        Each call to poll() overwrites this buffer with the newest parsed output.
+        """
         self.query.make_query()
         gpus = self.query.xml_out.getElementsByTagName("gpu")
-        all_gpu_props = {i: GPUQuery.parse_gpu_props(gpu) for i, gpu in enumerate(gpus) }
+        all_gpu_props = {i: GPUQuery.parse_gpu_props(gpu) for i, gpu in enumerate(gpus)}
         self.props_buffer = all_gpu_props

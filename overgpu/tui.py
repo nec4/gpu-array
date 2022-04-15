@@ -1,10 +1,19 @@
 import curses
-from query import *
+from .query import GPUQuery, Tracker
 from time import sleep
 from threading import Thread, Event
 
 
-def curses_init():
+def curses_init() -> curses.window:
+    """Function for initializing nCurses, supressing
+    getch() blocking and defining colors indicating
+    low, medium, and high values (green, yellow, and red).
+
+    Returns
+    -------
+    screen:
+        curses.window instance representing the stdscr
+    """
     screen = curses.initscr()
     curses.noecho()
     curses.curs_set(0)
@@ -25,25 +34,40 @@ class PollThread(Thread):
     Parameters
     ----------
     tracker:
-        GPU
-
+        Tracker instance for requesting, parsing and storing
+        GPU information.
     """
-    def __init__(self, tracker):
+
+    def __init__(self, tracker: Tracker):
         Thread.__init__(self)
         self.stop_event = Event()
         self.tracker = tracker
 
     def run(self):
-        while(not self.stop_event.isSet()):
+        """Main thread polling loop"""
+        while not self.stop_event.isSet():
             self.tracker.poll()
             sleep(1)
 
     def join(self, timeout=None):
+        """Safely request thread to end"""
         self.stop_event.set()
         Thread.join(self, timeout=timeout)
 
+
 class FrontEnd(object):
-    """TUI for GPU information"""
+    """TUI for GPU information
+
+    Parameters
+    ----------
+    tracker:
+        Tracker instance for requesting, parsing and storing
+        GPU information.
+    rows:
+        Integer number of rows available in the current terminal
+    cols:
+        Integer number of columns available in the current terminal
+    """
 
     overwatch_labels = {
         "memory": "Mem ",
@@ -64,23 +88,37 @@ class FrontEnd(object):
         self.resize(rows, cols)
 
     def resize(self, rows, cols):
+        """Method for adjusting the TUI in response to
+        a terminal resize/SIGWINCH
+
+        Parameters
+        ----------
+                rows:
+                        Integer number of rows available in the current terminal
+                cols:
+                        Integer number of columns available in the current terminal
+        """
         self.rows, self.cols = rows, cols
         self._initialize_gpu_windows()
 
     def run(self):
+        """Method to start the polling thread"""
         self.poll_thread = PollThread(self.tracker)
         self.poll_thread.start()
 
     def stop(self):
+        """Method to stop the polling thread"""
         self.poll_thread.join()
 
     def clear_array(self):
+        """Clears all windows and redraws borders"""
         for win_row in self.window_array:
             for window in win_row:
                 window.clear()
                 window.border(*[0 for _ in range(8)])
 
     def _swap_view(self):
+        """Swaps current card view"""
         if self.current_view == "overwatch":
             self.current_view = "process"
             self.clear_array()
@@ -91,16 +129,20 @@ class FrontEnd(object):
             return None
 
     def draw(self):
+        """Depending on the current view, runs drawing routines"""
         if self.current_view == "overwatch":
             self._draw_overwatch()
         if self.current_view == "process":
             self._draw_process()
 
     def _initialize_gpu_windows(self):
+        """Method for setting up the window array to encompass
+        information for individual GPUS
+        """
         # screen will broken into n squares
         # where n is the nearest power of two
-        powers = [i**2 for i in range(1, 4)]
-        diffs = [i- self.tracker.num_gpus for i in powers]
+        powers = [i ** 2 for i in range(1, 4)]
+        diffs = [i - self.tracker.num_gpus for i in powers]
         _, idx = min((val, idx) for (idx, val) in enumerate(diffs) if val >= 0)
         num_windows = powers[idx]
         win_rows = idx + 1
@@ -130,9 +172,21 @@ class FrontEnd(object):
                 self.window_array[i][j].border(*[0 for _ in range(8)])
                 self.window_array[i][j].scrollok(1)
 
-
     @staticmethod
-    def _determine_color(val):
+    def _determine_color(val: int) -> int:
+        """Helper method to determine color depending
+        on severity of the input value.
+
+        Parameters
+        ----------
+        val:
+            input value that should range from 0 to 100
+
+        Returns
+        -------
+        color:
+            curses window attribute
+        """
         if val < 33:
             color = curses.color_pair(1)
         elif val > 33 and val < 66:
@@ -142,6 +196,7 @@ class FrontEnd(object):
         return color
 
     def _draw_process(self):
+        """Method for drawing process information to each GPU window"""
         all_gpu_props = self.tracker.props_buffer
         if all_gpu_props != None:
             gpu_ids = sorted(all_gpu_props.keys())
@@ -159,13 +214,18 @@ class FrontEnd(object):
                     for i, process in enumerate(processes):
                         proc = all_gpu_props[gpu_id]["processes"][process]
                         proc_string = "{}: {} {} {} {}".format(
-                            proc["user"], process, proc["name"], proc["lifetime"], proc["mem"]
+                            proc["user"],
+                            process,
+                            proc["name"],
+                            proc["lifetime"],
+                            proc["mem"],
                         )
                         window.addstr(2 + i, self.indent, proc_string)
                 except:
-                    window.addstr(1,1,"Expand terminal - currently too small ...")
+                    window.addstr(1, 1, "Expand terminal - currently too small ...")
 
     def _draw_overwatch(self):
+        """Method for drawing GPU stats to each GPU window"""
         all_gpu_props = self.tracker.props_buffer
         if all_gpu_props != None:
             gpu_ids = sorted(all_gpu_props.keys())
@@ -208,7 +268,10 @@ class FrontEnd(object):
                 )
                 temp_frac = int(
                     100
-                    * (all_gpu_props[gpu_id]["temp"] / all_gpu_props[gpu_id]["max_temp"])
+                    * (
+                        all_gpu_props[gpu_id]["temp"]
+                        / all_gpu_props[gpu_id]["max_temp"]
+                    )
                 )
                 fan_frac = all_gpu_props[gpu_id]["fan"]
 
@@ -245,7 +308,22 @@ class FrontEnd(object):
                 window.addstr(8, self.indent, power_string, power_color)
                 self.draw_bar(window, 9, self.indent, power_frac, power_color)
 
-    def draw_bar(self, window, y, x, percent, color):
+    def draw_bar(self, window: curses.window, y: int, x: int, percent: int, color: int):
+        """Helper method for drawing percentage gauges.
+
+        Parameters
+        ----------
+        window:
+            curses.window instance in which the bar will be drawn
+        y:
+            row within the supplied window on which the bar is drawn
+        x:
+            column from the supplied window on which the bar starts
+        percent:
+            fraction of the bar to fill
+        color:
+            curses window attribute describing the color of the bar
+        """
         _, size_x = window.getmaxyx()
         length = size_x - x - 4
         filled = int(length * (percent / 100.0))
@@ -258,15 +336,19 @@ class FrontEnd(object):
         window.addstr(y, x + filled + unfilled, "]")
 
     def refresh_array(self):
+        """Method for sequentially refreshing each GPU window"""
         for i in range(len(self.window_array)):
             for j in range(len(self.window_array)):
-                window = self.window_array[i][j]
-                y_i, x_i = window.getbegyx()
-                y, x = window.getmaxyx()
                 self.window_array[i][j].refresh()
-                # self.pad_array[i][j].refresh(0,0, y_i+2,x_i+2, y_i+y-2, x_i+x-2)
 
     def refresh(self, screen):
+        """Wrapper method for refreshing the entire TUI
+
+        Parameters
+        ----------
+        screen:
+            curses.window instance representing the stdscr
+        """
         self.draw()
         screen.refresh()
         self.refresh_array()
