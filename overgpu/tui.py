@@ -141,7 +141,7 @@ class FrontEnd(object):
         """
         # screen will broken into n squares
         # where n is the nearest power of two
-        powers = [i ** 2 for i in range(1, 4)]
+        powers = [i**2 for i in range(1, 4)]
         diffs = [i - self.tracker.num_gpus for i in powers]
         _, idx = min((val, idx) for (idx, val) in enumerate(diffs) if val >= 0)
         num_windows = powers[idx]

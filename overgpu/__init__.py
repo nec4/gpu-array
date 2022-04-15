@@ -1,2 +1,2 @@
-from query import *
-from tui import *
+from .query import *
+from .tui import *
