@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-from overgpu.query import *
-from overgpu.tui import *
+from gpu_array.query import *
+from gpu_array.tui import *
 
 
 def main():
