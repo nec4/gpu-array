@@ -2,6 +2,10 @@
 
 ---
 
+<p align=center>
+<img src="demo.gif" width=500px />
+<p/>
+
 Simple tool for visual GPU stats and process info.
 
 ## Install
