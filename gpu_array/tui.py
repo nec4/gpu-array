@@ -77,8 +77,8 @@ class FrontEnd(object):
     }
     process_labels = {"pid": "PID  ", "memory": "Mem  ", "name": "Name "}
 
-    card_buffer_y = 11
-    card_buffer_x = 11
+    card_buffer_y = 10
+    card_buffer_x = 10
 
     def __init__(self, tracker, rows, cols):
         self.tracker = tracker
