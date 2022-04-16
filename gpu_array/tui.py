@@ -2,6 +2,7 @@ import curses
 from .query import GPUQuery, Tracker
 from time import sleep
 from threading import Thread, Event
+from typing import Union
 
 
 def curses_init() -> curses.window:
@@ -49,7 +50,7 @@ class PollThread(Thread):
             self.tracker.poll()
             sleep(1)
 
-    def join(self, timeout=None):
+    def join(self, timeout: Union[int, None] = None):
         """Safely request thread to end"""
         self.stop_event.set()
         Thread.join(self, timeout=timeout)
@@ -80,14 +81,14 @@ class FrontEnd(object):
     card_buffer_y = 10
     card_buffer_x = 10
 
-    def __init__(self, tracker, rows, cols):
+    def __init__(self, tracker: Tracker, rows: int, cols: int):
         self.tracker = tracker
         self.poll_thread = None
         self.indent = 4
         self.current_view = "overwatch"
         self.resize(rows, cols)
 
-    def resize(self, rows, cols):
+    def resize(self, rows: int, cols: int):
         """Method for adjusting the TUI in response to
         a terminal resize/SIGWINCH
 
@@ -141,7 +142,7 @@ class FrontEnd(object):
         """
         # screen will broken into n squares
         # where n is the nearest power of two
-        powers = [i**2 for i in range(1, 4)]
+        powers = [i ** 2 for i in range(1, 4)]
         diffs = [i - self.tracker.num_gpus for i in powers]
         _, idx = min((val, idx) for (idx, val) in enumerate(diffs) if val >= 0)
         num_windows = powers[idx]
@@ -347,7 +348,7 @@ class FrontEnd(object):
             for j in range(len(self.window_array)):
                 self.window_array[i][j].refresh()
 
-    def refresh(self, screen):
+    def refresh(self, screen: curses.window):
         """Wrapper method for refreshing the entire TUI
 
         Parameters
