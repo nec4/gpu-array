@@ -10,5 +10,6 @@ def main():
     front = FrontEnd(tracker)
     front.start()
 
+
 if __name__ == "__main__":
     main()

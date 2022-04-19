@@ -48,7 +48,7 @@ class FrontEnd(object):
         ("low", "dark green", ""),
         ("medium", "brown", ""),
         ("high", "dark red", ""),
-        ("rev_inc", "", "light gray"),
+        ("rev_inc", "black", "light gray"),
         ("rev", "", "black"),
     ]
 
@@ -83,9 +83,12 @@ class FrontEnd(object):
         raise urwid.ExitMainLoop()
 
     def keypress(self, key):
-        if key in ("q", "Q"):
+        if key in (
+            "q",
+            "Q",
+        ):
             self.stop()
-        if key in ("p"):
+        if key in ("p",):
             self._switch_view()
 
     @staticmethod
@@ -93,12 +96,7 @@ class FrontEnd(object):
         pile = []
         pile.append(urwid.Text(""))
         for _ in range(4):
-            pile.append(
-                urwid.Padding(
-                    urwid.Text(""),
-                    left=2
-                )
-            )
+            pile.append(urwid.Padding(urwid.Text(""), left=2))
             pile.append(
                 urwid.Padding(
                     urwid.ProgressBar("rev", "rev_inc", current=0),
@@ -113,12 +111,7 @@ class FrontEnd(object):
     def _initialize_proc_card():
         pile = []
         pile.append(urwid.Text(""))
-        pile.append(
-            urwid.Padding(
-                urwid.Text(""),
-                left=2
-            )
-        )
+        pile.append(urwid.Padding(urwid.Text(""), left=2))
         box = urwid.LineBox(urwid.Pile(pile))
         return box
 
@@ -126,20 +119,19 @@ class FrontEnd(object):
         pile = []
         pile.append(urwid.Text(name_str))
         for p in enumerate(proc_strs):
-            pile.append(
-                urwid.Padding(
-                    urwid.Text(p),
-                    left=2
-                )
-            )
+            pile.append(urwid.Padding(urwid.Text(p), left=2))
         box = urwid.LineBox(urwid.Pile(pile))
         return box
 
     def _initialize_grid(self):
         if self.current_view == "overwatch":
-            card_list = [FrontEnd._initialize_gauge_card() for _ in range(self.tracker.num_gpus)]
+            card_list = [
+                FrontEnd._initialize_gauge_card() for _ in range(self.tracker.num_gpus)
+            ]
         if self.current_view == "process":
-            card_list = [FrontEnd._initialize_proc_card() for _ in range(self.tracker.num_gpus)]
+            card_list = [
+                FrontEnd._initialize_proc_card() for _ in range(self.tracker.num_gpus)
+            ]
         self.grid = urwid.GridFlow(
             card_list,
             FrontEnd.card_width,
@@ -215,7 +207,6 @@ class FrontEnd(object):
                 self.top = urwid.Filler(self.grid)
             else:
                 self.top.original_widget = self.grid
-
 
     def _draw_overwatch(self, *args):
         all_gpu_props = self.tracker.props_buffer

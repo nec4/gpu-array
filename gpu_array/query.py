@@ -105,7 +105,10 @@ class GPUQuery(object):
                 capture_output=True,
                 text=True,
             )
-            user, comm, lifetime = completed_process.stdout.split()
+            if len(completed_process.stdout.split()) == 3:
+                user, comm, lifetime = completed_process.stdout.split()
+            else:
+                continue
             processes[pid] = {}
             processes[pid]["name"] = pname
             processes[pid]["mem"] = mem
