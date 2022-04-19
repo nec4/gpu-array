@@ -11,20 +11,10 @@ class InstallScript(install):
         install.run(self)
 
 
-def read(filename):
-    import os
-
-    BASE_DIR = os.path.dirname(__file__)
-    filename = os.path.join(BASE_DIR, filename)
-    with open(filename, "r") as fi:
-        return fi.read()
-
-
-def readlist(filename):
-    rows = read(filename).split("\n")
-    rows = [x.strip() for x in rows if x.strip()]
-    return list(rows)
-
+with open("requirements.txt", "r") as f:
+    install_requires = list(
+        filter(lambda x: "#" not in x, (line.strip() for line in f))
+    )
 
 setup(
     name=NAME,
@@ -34,6 +24,7 @@ setup(
     url="https://github.com/nec4/overgpu",
     license="MIT",
     packages=find_packages(),
+    install_requires=install_requires,
     zip_safe=True,
     cmdclass={"install": InstallScript},
     entry_points={
