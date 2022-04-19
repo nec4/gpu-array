@@ -10,7 +10,7 @@ Simple tool for visual GPU stats and process info.
 
 ## Install
 
-No requirements other than python >= 3.6 
+Urwid and python >= 3.6 
 
 `pip3 install .`
 
