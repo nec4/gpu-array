@@ -258,7 +258,7 @@ class FrontEnd(object):
             gpu_ids = sorted(all_gpu_props.keys())
             card_list = []
             for gpu_id in gpu_ids:
-                name_string = all_gpu_props[gpu_id]["name"]
+                name_string = "{}: {}".format(gpu_id, all_gpu_props[gpu_id]["name"])
                 processes = all_gpu_props[gpu_id]["processes"].keys()
                 proc_strs = []
                 for i, process in enumerate(processes):
@@ -287,7 +287,7 @@ class FrontEnd(object):
         if all_gpu_props != None:
             gpu_ids = sorted(all_gpu_props.keys())
             for gpu_id in gpu_ids:
-                name_string = all_gpu_props[gpu_id]["name"]
+                name_string = "{}: {}".format(gpu_id, all_gpu_props[gpu_id]["name"])
                 mem_string = "{}{}/{} MiB".format(
                     FrontEnd.overwatch_labels["memory"],
                     all_gpu_props[gpu_id]["used_mem"],
