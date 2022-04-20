@@ -24,7 +24,7 @@ class PollThread(Thread):
         """Main thread polling loop. Sleeps 1s after each poll."""
         while not self.stop_event.isSet():
             self.tracker.poll()
-            sleep(1)
+            sleep(self.tracker.polling_rate)
 
     def join(self, timeout: Union[int, None] = None):
         """Safely request thread to end
@@ -66,6 +66,8 @@ class FrontEnd(object):
         ("high", "dark red", ""),
         ("rev_inc", "black", "light gray"),
         ("rev", "", "black"),
+        ("cuda", "light gray", "dark blue"),
+        ("driver", "light gray", "dark magenta"),
     ]
 
     def __init__(self, tracker):
@@ -126,13 +128,13 @@ class FrontEnd(object):
           Pile:
             1: Text -> (GPU name)
             2: Padding(Text) -> Memory string
-            2: Padding(ProgressBar) -> Memory fraction
-            2: Padding(Text) -> Fan string
-            2: Padding(ProgressBar) -> Fan fraction
-            2: Padding(Text) -> Temperature string
-            2: Padding(ProgressBar) -> Temperature fraction
-            2: Padding(Text) -> Power string
-            2: Padding(ProgressBar) -> Power fraction
+            3: Padding(ProgressBar) -> Memory fraction
+            4: Padding(Text) -> Fan string
+            5: Padding(ProgressBar) -> Fan fraction
+            6: Padding(Text) -> Temperature string
+            7: Padding(ProgressBar) -> Temperature fraction
+            8: Padding(Text) -> Power string
+            9: Padding(ProgressBar) -> Power fraction
         """
         pile = []
         pile.append(urwid.Text(""))
@@ -205,10 +207,18 @@ class FrontEnd(object):
             FrontEnd.box_padding,
             "center",
         )
+        header = urwid.Text(
+            [
+                ("cuda", " CUDA {} ".format(self.tracker.cuda_version)),
+                ("driver", " Driver {} ".format(self.tracker.driver_version)),
+            ]
+        )
         if self.top == None:
-            self.top = urwid.Filler(self.grid)
+            self.top = urwid.Frame(
+                body=urwid.Filler(self.grid), header=header, footer=None
+            )
         else:
-            self.top.original_widget = self.grid
+            self.top.contents["body"][0].original_widget = self.grid
 
     @staticmethod
     def _determine_color(val: int) -> str:
@@ -269,10 +279,7 @@ class FrontEnd(object):
                 FrontEnd.box_padding,
                 "center",
             )
-            if self.top == None:
-                self.top = urwid.Filler(self.grid)
-            else:
-                self.top.original_widget = self.grid
+            self.top.contents["body"][0].original_widget = self.grid
 
     def _draw_overwatch(self, *args):
         """Method for drawing stats information to each GPU window"""
@@ -323,9 +330,11 @@ class FrontEnd(object):
                 )
                 fan_frac = all_gpu_props[gpu_id]["fan"]
 
-                card_contents = self.top.original_widget.contents[gpu_id][
-                    0
-                ].original_widget.contents
+                card_contents = (
+                    self.top.contents["body"][0]
+                    .original_widget.contents[gpu_id][0]
+                    .original_widget.contents
+                )
                 card_contents[0][0].set_text(name_string)
                 card_contents[1][0].original_widget.set_text(
                     (self._determine_color(mem_frac), mem_string)

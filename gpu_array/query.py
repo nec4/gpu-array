@@ -146,6 +146,16 @@ class Tracker(object):
         self.filename = None
         self.poll()
         self.num_gpus = len(self.props_buffer.keys())
+        self.cuda_version = (
+            self.query.xml_out.getElementsByTagName("cuda_version")[0]
+            .childNodes[0]
+            .data
+        )
+        self.driver_version = (
+            self.query.xml_out.getElementsByTagName("driver_version")[0]
+            .childNodes[0]
+            .data
+        )
 
     def poll(self):
         """Method that makes a query, parses the xml, and stores the
