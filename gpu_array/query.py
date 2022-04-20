@@ -105,6 +105,8 @@ class GPUQuery(object):
                 capture_output=True,
                 text=True,
             )
+
+            # Handle improper/incomplete output
             if len(completed_process.stdout.split()) == 3:
                 user, comm, lifetime = completed_process.stdout.split()
             else:

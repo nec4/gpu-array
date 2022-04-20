@@ -2,7 +2,7 @@ import urwid
 from .query import GPUQuery, Tracker
 from time import sleep
 from threading import Thread, Event
-from typing import Union
+from typing import Union, List
 
 
 class PollThread(Thread):
@@ -21,18 +21,34 @@ class PollThread(Thread):
         self.tracker = tracker
 
     def run(self):
-        """Main thread polling loop"""
+        """Main thread polling loop. Sleeps 1s after each poll."""
         while not self.stop_event.isSet():
             self.tracker.poll()
             sleep(1)
 
     def join(self, timeout: Union[int, None] = None):
-        """Safely request thread to end"""
+        """Safely request thread to end
+
+        Parameters
+        ----------
+        timeout:
+            Number of seconds to wait before thread join attempt ends.
+        """
         self.stop_event.set()
         Thread.join(self, timeout=timeout)
 
 
 class FrontEnd(object):
+    """TUI for GPU information. Uses an additional thread to run
+    polling requests from the GPU tracker. During the main loop,
+    "q" quits and "p" toggles GPU statistics and process information.
+
+    Parameters
+    ----------
+    tracker:
+        Tracker instance for requesting, parsing and storing
+        GPU information.
+    """
 
     box_padding = 1
     card_width = 35
@@ -63,7 +79,7 @@ class FrontEnd(object):
         self.loop.set_alarm_in(sec=1, callback=self._draw)
 
     def _switch_view(self):
-        """Swaps current card view"""
+        """Swaps current card view after detecting 'p' keypress"""
         if self.current_view == "overwatch":
             self.current_view = "process"
             self._initialize_grid()
@@ -74,15 +90,24 @@ class FrontEnd(object):
             return None
 
     def start(self):
+        """Creates and starts the polling thread as well as the TUI main loop"""
         self.poll_thread = PollThread(self.tracker)
         self.poll_thread.start()
         self.loop.run()
 
     def stop(self):
+        """Joins the polling thread and exits the TUI main loop"""
         self.poll_thread.join()
         raise urwid.ExitMainLoop()
 
-    def keypress(self, key):
+    def keypress(self, key: str):
+        """Input handling
+
+        Parameters
+        ----------
+        key:
+            Pressed key
+        """
         if key in (
             "q",
             "Q",
@@ -92,7 +117,23 @@ class FrontEnd(object):
             self._switch_view()
 
     @staticmethod
-    def _initialize_gauge_card():
+    def _initialize_gauge_card() -> urwid.LineBox:
+        """Method for initializing the visual GPU cards. Each card
+        is represented with a LineBox-wrapped Pile widget. Within
+        the Pile widget, several sub widgets are enumerated:
+
+        LineBox:
+          Pile:
+            1: Text -> (GPU name)
+            2: Padding(Text) -> Memory string
+            2: Padding(ProgressBar) -> Memory fraction
+            2: Padding(Text) -> Fan string
+            2: Padding(ProgressBar) -> Fan fraction
+            2: Padding(Text) -> Temperature string
+            2: Padding(ProgressBar) -> Temperature fraction
+            2: Padding(Text) -> Power string
+            2: Padding(ProgressBar) -> Power fraction
+        """
         pile = []
         pile.append(urwid.Text(""))
         for _ in range(4):
@@ -108,14 +149,38 @@ class FrontEnd(object):
         return box
 
     @staticmethod
-    def _initialize_proc_card():
+    def _initialize_proc_card() -> urwid.LineBox:
+        """Method for initializing the process GPU cards. Each card
+        is represented with a LineBox-wrapped Pile widget. Within
+        the Pile widget, several sub widgets are enumerated:
+
+        LineBox:
+          Pile:
+            1: Text -> (GPU name)
+            2: Padding(Text) -> Process string
+        """
+
         pile = []
         pile.append(urwid.Text(""))
         pile.append(urwid.Padding(urwid.Text(""), left=2))
         box = urwid.LineBox(urwid.Pile(pile))
         return box
 
-    def _update_proc_pile(self, name_str, proc_strs):
+    def _update_proc_pile(self, name_str: str, proc_strs: List[str]) -> urwid.LineBox:
+        """Method for updating/filling out a process card
+
+        Parameters
+        ----------
+        name_str:
+            GPU name
+        proc_strs:
+            List of process information strings
+
+        Returns
+        -------
+        box:
+            GPU process card
+        """
         pile = []
         pile.append(urwid.Text(name_str))
         for p in enumerate(proc_strs):
@@ -124,6 +189,7 @@ class FrontEnd(object):
         return box
 
     def _initialize_grid(self):
+        """Method for initializing the GPU card grid using urwid.GridFlow"""
         if self.current_view == "overwatch":
             card_list = [
                 FrontEnd._initialize_gauge_card() for _ in range(self.tracker.num_gpus)
@@ -145,7 +211,7 @@ class FrontEnd(object):
             self.top.original_widget = self.grid
 
     @staticmethod
-    def _determine_color(val: int) -> int:
+    def _determine_color(val: int) -> str:
         """Helper method to determine color depending
         on severity of the input value.
 
@@ -157,7 +223,7 @@ class FrontEnd(object):
         Returns
         -------
         color:
-            curses window attribute
+            urwid palette key
         """
         if val < 33:
             color = "low"
@@ -209,6 +275,7 @@ class FrontEnd(object):
                 self.top.original_widget = self.grid
 
     def _draw_overwatch(self, *args):
+        """Method for drawing stats information to each GPU window"""
         all_gpu_props = self.tracker.props_buffer
         if all_gpu_props != None:
             gpu_ids = sorted(all_gpu_props.keys())
