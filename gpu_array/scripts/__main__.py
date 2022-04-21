@@ -1,15 +1,26 @@
 #! /usr/bin/env python
 
+import argparse
 from gpu_array.query import *
 from gpu_array.tui import *
 
 
-def main():
+def parse_cli():
+    parser = argparse.ArgumentParser(description="Tool for visual GPU monitoring")
+    parser.add_argument(
+        "--cardwidth", type=int, default=35, help="Width of each visual GPU card"
+    )
+    return parser
+
+
+def main(cli_args):
     query = GPUQuery()
     tracker = Tracker(query)
-    front = FrontEnd(tracker)
+    front = FrontEnd(tracker, card_width=cli_args.cardwidth)
     front.start()
 
 
 if __name__ == "__main__":
-    main()
+    parser = parse_cli()
+    cli_args = parser.parse_args()
+    main(cli_args)

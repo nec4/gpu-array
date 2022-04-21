@@ -48,10 +48,12 @@ class FrontEnd(object):
     tracker:
         Tracker instance for requesting, parsing and storing
         GPU information.
+    card_width:
+        Specifies the width, in character cells, of each gpu
+        card window
     """
 
     box_padding = 1
-    card_width = 35
     overwatch_labels = {
         "memory": "Mem ",
         "temperature": "Tmp ",
@@ -70,7 +72,8 @@ class FrontEnd(object):
         ("driver", "light gray", "dark magenta"),
     ]
 
-    def __init__(self, tracker):
+    def __init__(self, tracker, card_width: int=35):
+        self.card_width = card_width
         self.current_view = "overwatch"
         self.top = None
         self.tracker = tracker
@@ -202,7 +205,7 @@ class FrontEnd(object):
             ]
         self.grid = urwid.GridFlow(
             card_list,
-            FrontEnd.card_width,
+            self.card_width,
             FrontEnd.box_padding,
             FrontEnd.box_padding,
             "center",
@@ -278,7 +281,7 @@ class FrontEnd(object):
                 card_list.append(self._update_proc_pile(name_string, proc_strs))
             self.grid = urwid.GridFlow(
                 card_list,
-                FrontEnd.card_width,
+                self.card_width,
                 FrontEnd.box_padding,
                 FrontEnd.box_padding,
                 "center",
