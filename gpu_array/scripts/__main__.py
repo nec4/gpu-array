@@ -12,11 +12,13 @@ def parse_cli():
     )
     return parser
 
-
-if __name__ == "__main__":
+def main():
     parser = parse_cli()
     cli_args = parser.parse_args()
     query = GPUQuery()
     tracker = Tracker(query)
     front = FrontEnd(tracker, card_width=cli_args.cardwidth)
     front.start()
+
+if __name__ == "__main__":
+    main()
