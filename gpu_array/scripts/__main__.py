@@ -15,11 +15,6 @@ def parse_cli():
 
 
 def main():
-    try:
-        subprocess.run(["nvidia-smi"])
-    except:
-        raise RuntimeError("nvidia-smi not currently installed")
-
     parser = parse_cli()
     cli_args = parser.parse_args()
     query = GPUQuery()
